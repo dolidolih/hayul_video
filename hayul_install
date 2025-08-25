@@ -1,0 +1,50 @@
+1. Hayul 다운로드
+git clone https://github.com/ye-seola/Hayul.git
+pip install lxml pyaxml pure-python-adb cryptography
+
+2. JDK 설치
+https://www.oracle.com/java/technologies/downloads
+
+3. 카카오톡, TermOnePlus, Userland 다운로드
+  - TermOnePlus : 터미널 에뮬레이터. Iris 실행에 사용.
+  - Userland : 핸드폰 내에서 리눅스 환경 생성. irispy-client 실행 및 코딩에 사용.
+
+4. Keystore 생성
+keytool -genkey -v -keystore KEY.jks -keyalg RSA -keysize 2048 -validity 10000
+
+5. Hayul 패치 진행
+python main.py
+com.kakao.talk
+com.termoneplus
+
+6. 패치된 apk 설치
+adb install-multiple (get-item patched-~~~/*.apk)
+
+7. 카카오톡 실행 및 로그인
+로그인 후 반드시 채팅 한번 써주기, 알림 한번 받기
+
+8. [TermOnePlus] 환경변수 설정
+cat > ~/.shrc <<EOF
+export IRIS_CONFIG_PATH="/data/user/0/com.termoneplus/app_HOME/config.json"
+export IRIS_RUNNER="com.termoneplus"
+EOF
+
+9. [TermOnePlus] iris 다운로드 및 실행
+curl -L -O https://github.com/dolidolih/Iris/releases/latest/download/Iris.apk
+app_process -cp Iris.apk / party.qwer.iris.Main
+
+10. [Userland] userland 환경 실행
+ssh userland@ip -p 2022
+sudo sed -i 's/ports.ubuntu.com/ftp.lanet.kr/g' /etc/apt/sources.list
+sudo apt update && sudo apt upgrade
+
+11. [Userland] irispy-client 설치
+cd ipy2
+python3 -m venv venv
+source venv/bin/activate
+pip install irispy-client
+iris init
+
+12. [Userland] service 등록
+sudo vim /etc/init.d/irispy
+sudo update-rc.d irispy defaults
