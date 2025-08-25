@@ -1,3 +1,5 @@
+https://github.com/dolidolih/hayul_video
+
 1. Hayul 다운로드
 git clone https://github.com/ye-seola/Hayul.git
 pip install lxml pyaxml pure-python-adb cryptography
@@ -5,12 +7,12 @@ pip install lxml pyaxml pure-python-adb cryptography
 2. JDK 설치
 https://www.oracle.com/java/technologies/downloads
 
-3. 카카오톡, TermOnePlus, Userland 다운로드
+3. Keystore 생성
+keytool -genkey -v -keystore KEY.jks -keyalg RSA -keysize 2048 -validity 10000
+
+4. 카카오톡, TermOnePlus, Userland 다운로드
   - TermOnePlus : 터미널 에뮬레이터. Iris 실행에 사용.
   - Userland : 핸드폰 내에서 리눅스 환경 생성. irispy-client 실행 및 코딩에 사용.
-
-4. Keystore 생성
-keytool -genkey -v -keystore KEY.jks -keyalg RSA -keysize 2048 -validity 10000
 
 5. Hayul 패치 진행
 python main.py
