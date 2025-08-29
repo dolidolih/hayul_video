@@ -1,0 +1,81 @@
+https://github.com/dolidolih/hayul_video
+
+1. Hayul 다운로드
+git clone https://github.com/ye-seola/Hayul.git
+pip install lxml pyaxml pure-python-adb cryptography
+
+2. JDK 설치
+https://www.oracle.com/java/technologies/downloads
+
+3. Keystore 생성
+keytool -genkey -v -keystore KEY.jks -keyalg RSA -keysize 2048 -validity 10000
+
+4. 카카오톡, Termux(플레이스토어버전) 다운로드
+
+5. Hayul 패치 진행
+python main.py
+com.kakao.talk
+com.termux
+
+6. 패치된 apk 설치
+adb install-multiple (get-item patched-~~~/*.apk)
+
+7. 카카오톡 실행 및 로그인
+로그인 후 반드시 채팅 한번 써주기, 알림 한번 받기
+
+8. Iris 실행
+nano ~/.bashrc
+
+export IRIS_CONFIG_PATH="/data/data/com.termux/files/home/config.json"
+export IRIS_RUNNER="com.termux"
+
+source ~/.bashrc
+
+curl -L -O https://github.com/dolidolih/Iris/releases/latest/download/Iris.apk
+app_process -cp Iris.apk / party.qwer.iris.Main
+
+9. 리눅스 환경 실행
+[새로운 터미널 오픈]
+pkg update && pkg install proot-distro
+proot-distro install ubuntu
+proot-distro login ubuntu
+
+10. 리눅스 환경 설정
+passwd
+apt update && apt upgrade
+apt install sudo python3.12-venv openssh-server
+useradd ubuntu
+passwd ubuntu
+usermod -aG sudo ubuntu
+nano /etc/sudoers
+
+ubuntu  ALL=(ALL:ALL) ALL
+
+nano /etc/ssh/sshd_config
+
+port 8022
+address bind
+passwordauthentication
+
+service ssh start
+
+su ubuntu
+chsh -s /bin/bash
+mkdir /home/ubuntu
+
+11. vscode 실행
+ubuntu@ip:8022
+
+12. irispy-client 설치
+cd ipy2
+python3 -m venv venv
+source venv/bin/activate
+pip install irispy-client
+iris init
+
+12. service 등록
+irispy 파일 생성
+chmod +x irispy
+sudo cp irispy /etc/init.d/.
+sudo update-rc.d irispy defaults
+sudo service irispy start
