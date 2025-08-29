@@ -1,0 +1,149 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          irispy_service
+# Required-Start:    $local_fs $network
+# Required-Stop:     $local_fs $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start/stop Irispy Python application
+# Description:       This service manages the Irispy Python application.
+### END INIT INFO
+
+# --- Configuration ---
+NAME="irispy_service"
+USER="ubuntu"
+WORKING_DIR="/home/ubuntu/ipy2"
+PYTHON_VENV="/home/ubuntu/ipy2/venv/bin/python"
+APP_SCRIPT="/home/ubuntu/ipy2/irispy.py"
+APP_ARGS="127.0.0.1:3000"
+
+PIDFILE="/var/run/${NAME}.pid"
+LOGFILE="/var/log/${NAME}.log"
+
+# --- Functions ---
+start() {
+  echo "Starting $NAME..."
+
+  if [ -f "$PIDFILE" ] && kill -0 $(cat "$PIDFILE") 2>/dev/null; then
+    echo "$NAME is already running with PID $(cat "$PIDFILE")."
+    exit 1
+  fi
+
+  mkdir -p "$(dirname "$LOGFILE")"
+  mkdir -p "$(dirname "$PIDFILE")"
+  touch "$LOGFILE"
+  chown "$USER":"$USER" "$LOGFILE"
+
+  # --- CORRECTED START LOGIC ---
+  # 1. Execute the command as the specified user.
+  # 2. The 'sh -c' block starts the process in the background and then echoes its PID.
+  # 3. The main script (as root) captures this PID from the command substitution.
+  PID=$(sudo -u "$USER" -- sh -c "
+        cd \"$WORKING_DIR\" || exit 1
+        setsid \"$PYTHON_VENV\" \"$APP_SCRIPT\" $APP_ARGS >> \"$LOGFILE\" 2>&1 &
+        echo \$!
+    ")
+
+  # 4. The main script (as root) now writes the captured PID to the PIDFILE.
+  if [ -n "$PID" ] && ps -p "$PID" >/dev/null; then
+    echo "$PID" >"$PIDFILE"
+    echo "$NAME started with PID $PID."
+  else
+    echo "Failed to start $NAME. Check $LOGFILE for errors."
+    rm -f "$PIDFILE"
+    exit 1
+  fi
+}
+
+stop() {
+  echo "Stopping $NAME..."
+
+  if [ ! -f "$PIDFILE" ]; then
+    echo "PID file not found. Is $NAME running?"
+    # As a fallback, try to find the process by name
+    PIDS=$(pgrep -f -u "$USER" "$APP_SCRIPT")
+    if [ -z "$PIDS" ]; then
+      echo "$NAME does not appear to be running."
+      exit 0
+    else
+      echo "Found lingering processes without a PID file: $PIDS. Attempting to kill..."
+      kill -15 $PIDS
+      sleep 3
+      kill -9 $PIDS 2>/dev/null
+      echo "Lingering processes terminated."
+      exit 0
+    fi
+  fi
+
+  PID=$(cat "$PIDFILE")
+
+  if ! kill -0 "$PID" 2>/dev/null; then
+    echo "Process with PID $PID not found. Cleaning up stale PID file."
+    rm -f "$PIDFILE"
+    exit 0
+  fi
+
+  # --- Robust Stop Logic ---
+  # 1. Send SIGTERM to the entire process group for a graceful shutdown.
+  # The '-' before the PID is what targets the whole group.
+  echo "Sending SIGTERM to process group $PID..."
+  kill -TERM -"$PID" 2>/dev/null
+  echo "$NAME stopped forcefully."
+  rm -f "$PIDFILE"
+}
+
+status() {
+  if [ -f "$PIDFILE" ]; then
+    PID=$(cat "$PIDFILE")
+    if kill -0 "$PID" 2>/dev/null; then
+      echo "$NAME is running with PID $PID."
+      # Optional: Verify the user
+      PROCESS_USER=$(ps -o user= -p "$PID")
+      echo "Running as user: $PROCESS_USER"
+      exit 0
+    else
+      echo "$NAME is not running, but a stale PID file exists."
+      exit 1
+    fi
+  else
+    # Fallback check
+    if pgrep -f -u "$USER" "$APP_SCRIPT" >/dev/null; then
+      echo "$NAME is running (found via process name), but no PID file."
+      exit 1
+    else
+      echo "$NAME is not running."
+      exit 3
+    fi
+  fi
+}
+
+restart() {
+  echo "Restarting $NAME..."
+  stop
+  # Wait a moment to ensure all ports are freed up
+  sleep 2
+  start
+}
+
+# --- Main execution ---
+case "$1" in
+start)
+  start
+  ;;
+stop)
+  stop
+  exit 0
+  ;;
+restart)
+  restart
+  ;;
+status)
+  status
+  ;;
+*)
+  echo "Usage: sudo service $(basename $0) {start|stop|restart|status}"
+  exit 1
+  ;;
+esac
+
+exit 0
